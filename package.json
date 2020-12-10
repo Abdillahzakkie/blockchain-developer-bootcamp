@@ -4,7 +4,11 @@
   "description": "Learning about Blockchain developer",
   "main": "index.js",
   "scripts": {
-    "test": "truffle test"
+    "test": "truffle test",
+    "test:exchange": "truffle test test/exchange.test.js",
+    "ganache": "ganache-cli --deterministic",
+    "compile": "truffle compile --all",
+    "migrate:dev": "truffle migrate --reset --network development"
   },
   "repository": {
     "type": "git",
