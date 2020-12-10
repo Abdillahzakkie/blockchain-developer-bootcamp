@@ -18,13 +18,14 @@ contract Exchange is Ownable {
     // Events
     event Deposit(address indexed token, address indexed user, uint indexed balance, uint amount);
     event Withdrawal(address indexed token, address indexed user, uint indexed balance, uint amount);
-    event Order(uint id, uint timestamp, address tokenGet, uint amountGet, address tokenGive, uint amountGive);
+    event Order(uint id, uint timestamp, address user, address tokenGet, uint amountGet, address tokenGive, uint amountGive);
 
 
     // Struct
     struct _Order {
         uint id;
         uint timstamp;
+        address user;
         address tokenGet;
         uint amountGet;
         address tokenGive;
@@ -50,19 +51,6 @@ contract Exchange is Ownable {
 
     fallback() payable external {
         require(msg.value == 0, "failed");
-    }
-
-    function makeOrder(address _tokenGet, uint _amountGet, address _tokenGive, uint _amountGive) public {
-        orderCount = orderCount.add(1);
-        orders[orderCount] = _Order(
-            orderCount,
-            block.timestamp,
-            _tokenGet,
-            _amountGet,
-            _tokenGive,
-            _amountGive
-        );
-        emit Order(orderCount, block.timestamp, _tokenGet, _amountGet, _tokenGive, _amountGive);
     }
 
     function depositToken(address _token, uint _amount) public {
@@ -101,5 +89,19 @@ contract Exchange is Ownable {
         payable(_msgSender()).transfer(_amount.sub(_taxAmount));
         
         emit Withdrawal(ETHER, _msgSender(), tokens[ETHER][_msgSender()], _amount);
+    }
+
+    function makeOrder(address _tokenGet, uint _amountGet, address _tokenGive, uint _amountGive) public {
+        orderCount = orderCount.add(1);
+        orders[orderCount] = _Order(
+            orderCount,
+            block.timestamp,
+            _msgSender(),
+            _tokenGet,
+            _amountGet,
+            _tokenGive,
+            _amountGive
+        );
+        emit Order(orderCount, block.timestamp, _msgSender(), _tokenGet, _amountGet, _tokenGive, _amountGive);
     }
 }

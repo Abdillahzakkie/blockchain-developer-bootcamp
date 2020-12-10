@@ -280,7 +280,8 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
 
         it("should track order", async () => {
             const result = await this.contract.orders(1);
-            const { tokenGet, amountGet, tokenGive, amountGive } = result;
+            const { user, tokenGet, amountGet, tokenGive, amountGive } = result;
+            expect(user).to.equal(user1);
             expect(tokenGet).to.equal(_tokenGet);
             expect(amountGet.toString()).to.equal(_amountGet);
             expect(tokenGive).to.equal(_tokenGive);
@@ -290,6 +291,7 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
         it("should emit Order event", async () => {
             expectEvent(reciept, 'Order', {
                 id: '1',
+                user: user1,
                 tokenGet: _tokenGet, 
                 amountGet: _amountGet, 
                 tokenGive: _tokenGive, 
