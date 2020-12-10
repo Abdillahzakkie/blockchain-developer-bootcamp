@@ -160,19 +160,13 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
         it("should withdraw tokens from contract", async () => {
             await this.contract.withdrawToken(this.token.address, toWei(5), { from: user1 });
             const result = await this.token.balanceOf(user1);
-            expect(result.toString()).to.equal(toWei(94.5));
+            expect(result.toString()).to.equal(toWei(95));
         })
 
         it("should deduct amount properly", async () => {
             await this.contract.withdrawToken(this.token.address, toWei(5), { from: user1 });
             const result = await this.contract.balanceOf(this.token.address, user1);
             expect(result.toString()).to.equal(toWei(5));
-        })
-
-        it("should deposit trading fee to feeAccount", async () => {
-            await this.contract.withdrawToken(this.token.address, toWei(5), { from: user1 });
-            const result = await this.contract.balanceOf(this.token.address, feeAccount);
-            expect(result.toString()).to.equal(toWei(0.5));
         })
 
         it("should emit withdrawal event", async () => {
@@ -233,12 +227,6 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
             await this.contract.withdrawEther(toWei(1), { from: user1 });
             const result = await this.contract.balanceOf(ZERO_ADDRESS, user1);
             expect(result.toString()).to.equal(toWei(1));
-        })
-
-        it("should deposit trading fee to feeAccount", async () => {
-            await this.contract.withdrawEther(toWei(1), { from: user1 });
-            const result = await this.contract.balanceOf(ZERO_ADDRESS, feeAccount);
-            expect(result.toString()).to.equal(toWei(0.1));
         })
 
         it("should emit withdrawal event", async () => {
@@ -366,30 +354,38 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
             reciept = await this.contract.fillOrder(1, { from: user2 });
         })
 
-        describe('should fill new order', () => {
-            it("should set the token values of order maker properly", async () => {
-                result = await this.contract.balanceOf(_tokenGet, user1);
-                expect(result.toString()).to.equal(toWei(1));
+        it("should set the token values of order maker properly", async () => {
+            result = await this.contract.balanceOf(_tokenGet, user1);
+            expect(result.toString()).to.equal(toWei(1));
 
-                result = await this.contract.balanceOf(_tokenGive, user1);
-                expect(result.toString()).to.equal(toWei(0));
-            })
-
-            it("should set the token values of fill order user properly", async () => {
-                result = await this.contract.balanceOf(_tokenGet, user2);
-                expect(result.toString()).to.equal(toWei(0));
-
-                result = await this.contract.balanceOf(_tokenGive, user2);
-                expect(result.toString()).to.equal(toWei(.9));
-            })
-
-            it("should credit feeAccount with trading fee", async () => {
-                result = await this.contract.balanceOf(_tokenGive, feeAccount);
-                expect(result.toString()).to.equal(toWei(.1));
-            })
-
+            result = await this.contract.balanceOf(_tokenGive, user1);
+            expect(result.toString()).to.equal(toWei(0));
         })
-        
+
+        it("should set the token of fill order user properly", async () => {
+            result = await this.contract.balanceOf(_tokenGet, user2);
+            expect(result.toString()).to.equal(toWei(0));
+
+            result = await this.contract.balanceOf(_tokenGive, user2);
+            expect(result.toString()).to.equal(toWei(.9));
+        })
+
+        it("should credit feeAccount with trading fee", async () => {
+            result = await this.contract.balanceOf(_tokenGive, feeAccount);
+            expect(result.toString()).to.equal(toWei(.1));
+        })
+
+        it("should emit Trade event", async () => {
+            expectEvent(reciept, 'Trade', {
+                id: '1',
+                from: user1,
+                tokenGet: _tokenGet,
+                amountGet: _amountGet,
+                to: user2,
+                tokenGive: _tokenGive,
+                amountGive: _amountGive
+            })
+        })
     })
     
 

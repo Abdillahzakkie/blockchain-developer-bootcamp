@@ -21,6 +21,8 @@ contract Exchange is Ownable {
     event Withdrawal(address indexed token, address indexed user, uint indexed balance, uint amount);
     event Order(uint id, uint timestamp, address user, address tokenGet, uint amountGet, address tokenGive, uint amountGive);
     event Cancel(uint id, uint timestamp, address user, address tokenGet, uint amountGet, address tokenGive, uint amountGive);
+    event Trade(uint id, uint timestamp, address from, address tokenGet, uint amountGet, address to, address tokenGive, uint amountGive);
+
 
     // Struct
     struct _Order {
@@ -64,13 +66,10 @@ contract Exchange is Ownable {
 
     function withdrawToken(address _token, uint _amount) public {
         require(tokens[_token][_msgSender()] >= _amount, "amount exceeds balance");
-        uint _taxAmount = _amount.mul(feePercent).div(100);
         tokens[_token][_msgSender()] = tokens[_token][_msgSender()].sub(_amount);
 
-        tokens[_token][feeAccount] = tokens[_token][feeAccount].add(_taxAmount);
-
-        IERC20(_token).transfer(_msgSender(), _amount.sub(_taxAmount));
-
+        tokens[_token][feeAccount] = tokens[_token][feeAccount];
+        IERC20(_token).transfer(_msgSender(), _amount);
         emit Withdrawal(_token, _msgSender(), tokens[_token][_msgSender()], _amount);
     }
 
@@ -83,12 +82,9 @@ contract Exchange is Ownable {
 
     function withdrawEther(uint _amount) public {
         require(tokens[ETHER][_msgSender()] >= _amount, "amount exceeds balance");
-        uint _taxAmount = _amount.mul(feePercent).div(100);
         tokens[ETHER][_msgSender()] = tokens[ETHER][_msgSender()].sub(_amount);
 
-        tokens[ETHER][feeAccount] = tokens[ETHER][feeAccount].add(_taxAmount);
-        payable(_msgSender()).transfer(_amount.sub(_taxAmount));
-        
+        payable(_msgSender()).transfer(_amount);
         emit Withdrawal(ETHER, _msgSender(), tokens[ETHER][_msgSender()], _amount);
     }
 
@@ -132,6 +128,16 @@ contract Exchange is Ownable {
             _order.tokenGet,
             _order.amountGet,
             _order.tokenGive,
+            _order.amountGive
+        );
+        emit Trade(
+            _id, 
+            block.timestamp, 
+            _order.user, 
+            _order.tokenGet, 
+            _order.amountGet, 
+            _msgSender(), 
+            _order.tokenGive, 
             _order.amountGive
         );
     }
