@@ -99,22 +99,22 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
     describe('deposit tokens', () => {
         const _amount = toWei(10);
 
-        it("should deposit tokens properly", async () => {
+        beforeEach(async () => {
             await this.token.approve(this.contract.address, _amount, { from: user1 });
+        })
+
+        it("should deposit tokens properly", async () => {
             await this.contract.depositToken(this.token.address, _amount, { from: user1 });
-            const result = await this.contract.tokens(this.token.address, user1);
+            const result = await this.contract.balanceOf(this.token.address, user1);
             expect(result.toString()).to.equal(_amount);
         })
 
         it("should emit Deposit event", async () => {
-            await this.token.approve(this.contract.address, _amount, { from: user1 });
             const reciept = await this.contract.depositToken(this.token.address, _amount, { from: user1 });
-            const balance = await this.contract.tokens(this.token.address, user1);
-
             expectEvent(reciept, 'Deposit', { 
                 token: this.token.address, 
+                balance: _amount,
                 user: user1, 
-                balance: balance.toString(),
                 amount: _amount 
             })
         })
@@ -165,13 +165,13 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
 
         it("should deduct amount properly", async () => {
             await this.contract.withdrawToken(this.token.address, toWei(5), { from: user1 });
-            const result = await this.contract.tokens(this.token.address, user1);
+            const result = await this.contract.balanceOf(this.token.address, user1);
             expect(result.toString()).to.equal(toWei(5));
         })
 
         it("should deposit trading fee to feeAccount", async () => {
             await this.contract.withdrawToken(this.token.address, toWei(5), { from: user1 });
-            const result = await this.contract.tokens(this.token.address, feeAccount);
+            const result = await this.contract.balanceOf(this.token.address, feeAccount);
             expect(result.toString()).to.equal(toWei(0.5));
         })
 
@@ -198,7 +198,7 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
     describe('deposit Ether', () => {
         it("should deposit ether properly", async () => {
             await this.contract.depositEther({ from: user1, value: toWei(1) });
-            const result = await this.contract.tokens(ZERO_ADDRESS, user1);
+            const result = await this.contract.balanceOf(ZERO_ADDRESS, user1);
             expect(result.toString()).to.equal(toWei(1));
         })
 
@@ -231,13 +231,13 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
 
         it("should withdraw ether properly", async () => {
             await this.contract.withdrawEther(toWei(1), { from: user1 });
-            const result = await this.contract.tokens(ZERO_ADDRESS, user1);
+            const result = await this.contract.balanceOf(ZERO_ADDRESS, user1);
             expect(result.toString()).to.equal(toWei(1));
         })
 
         it("should deposit trading fee to feeAccount", async () => {
             await this.contract.withdrawEther(toWei(1), { from: user1 });
-            const result = await this.contract.tokens(ZERO_ADDRESS, feeAccount);
+            const result = await this.contract.balanceOf(ZERO_ADDRESS, feeAccount);
             expect(result.toString()).to.equal(toWei(0.1));
         })
 
@@ -263,7 +263,6 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
 
     })
     
-
     describe('make trade', () => {
         let reciept;
         let _tokenGet, _amountGet, _tokenGive, _amountGive;

@@ -12,8 +12,9 @@ contract Exchange is Ownable {
     address private ETHER; // store Ether in a blank address
     uint public orderCount; // store ordder counts
 
-    mapping(address => mapping(address => uint)) public tokens;
+    mapping(address => mapping(address => uint)) private tokens;
     mapping(uint => _Order) public orders;
+    mapping(uint => bool) public cancelledOrders;
 
     // Events
     event Deposit(address indexed token, address indexed user, uint indexed balance, uint amount);
@@ -91,6 +92,10 @@ contract Exchange is Ownable {
         emit Withdrawal(ETHER, _msgSender(), tokens[ETHER][_msgSender()], _amount);
     }
 
+    function balanceOf(address _token, address _account) external view returns(uint) {
+        return tokens[_token][_account];
+    }
+
     function makeOrder(address _tokenGet, uint _amountGet, address _tokenGive, uint _amountGive) public {
         orderCount = orderCount.add(1);
         orders[orderCount] = _Order(
@@ -103,5 +108,11 @@ contract Exchange is Ownable {
             _amountGive
         );
         emit Order(orderCount, block.timestamp, _msgSender(), _tokenGet, _amountGet, _tokenGive, _amountGive);
+    }
+
+    function cancelOrder(uint _id) public {
+        require(_msgSender() == orders[_id].user, "Ownable: caller is not the owner");
+        require(!cancelledOrders[_id], "order has already been cancelled");
+        cancelledOrders[_id] = true;
     }
 }
