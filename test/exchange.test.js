@@ -5,8 +5,8 @@ const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants");
 const Exchange = artifacts.require("Exchange");
 const RAIDTOKEN = artifacts.require("RAIDTOKEN");
 
-const toWei = (_amount) => web3.utils.toWei(_amount.toString(), "ether");
-const fromWei = (_amount) => web3.utils.fromWei(_amount.toString(), "ether");
+const toWei = _amount => web3.utils.toWei(_amount.toString(), "ether");
+const fromWei = _amount => web3.utils.fromWei(_amount.toString(), "ether");
 
 const errorMessage = {
     onlyOwner: "Ownable: caller is not the owner",
