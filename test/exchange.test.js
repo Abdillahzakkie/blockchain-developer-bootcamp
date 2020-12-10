@@ -337,10 +337,22 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
             })
         })
 
+        it("should reject if order has already been filled", async () => {
+            try {
+                await this.contract.depositEther({ from: user2, value: toWei(1) });
+                await this.contract.fillOrder(1, { from: user2 });
+
+                await this.contract.cancelOrder(1, { from: user1 }); // should fail to cancel order
+            } catch (error) {
+                assert(error.message.includes("order has already been filled"));
+                return;
+            }
+            assert(false);
+        })
     })
     
     describe('fill order', () => {
-        let result, reciept;
+        let result;
         let _tokenGet, _amountGet, _tokenGive, _amountGive;
 
         beforeEach(async () => {
@@ -351,10 +363,11 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
             await this.contract.depositEther({ from: user2, value: toWei(1) });
 
             await this.contract.makeOrder(_tokenGet, _amountGet, _tokenGive, _amountGive, { from: user1 });
-            reciept = await this.contract.fillOrder(1, { from: user2 });
         })
 
         it("should set the token values of order maker properly", async () => {
+            await this.contract.fillOrder(1, { from: user2 });
+
             result = await this.contract.balanceOf(_tokenGet, user1);
             expect(result.toString()).to.equal(toWei(1));
 
@@ -363,6 +376,8 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
         })
 
         it("should set the token of fill order user properly", async () => {
+            await this.contract.fillOrder(1, { from: user2 });
+
             result = await this.contract.balanceOf(_tokenGet, user2);
             expect(result.toString()).to.equal(toWei(0));
 
@@ -371,23 +386,49 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
         })
 
         it("should credit feeAccount with trading fee", async () => {
+            await this.contract.fillOrder(1, { from: user2 });
+
             result = await this.contract.balanceOf(_tokenGive, feeAccount);
             expect(result.toString()).to.equal(toWei(.1));
         })
 
         it("should emit Trade event", async () => {
+            const reciept = await this.contract.fillOrder(1, { from: user2 });
+
             expectEvent(reciept, 'Trade', {
                 id: '1',
-                from: user1,
+                user: user1,
                 tokenGet: _tokenGet,
                 amountGet: _amountGet,
-                to: user2,
+                userFill: user2,
                 tokenGive: _tokenGive,
                 amountGive: _amountGive
             })
         })
+
+        it("should not fill order it if order has already been cancelled", async () => {
+            try {
+                await this.contract.cancelOrder(1, { from: user1 })
+                await this.contract.fillOrder(1, { from: user2 });
+            } catch (error) {
+                assert(error.message.includes("order does not exist"));
+                return;
+            }
+            assert(false);
+        })
+
+        it("should reject if order has already been filled", async () => {
+            try {
+                await this.contract.fillOrder(1, { from: user2 });
+                await this.contract.fillOrder(1, { from: user2 });
+            } catch (error) {
+                assert(error.message.includes("order has already been filled"));
+                return;
+            }
+            assert(false);
+        })
+
     })
-    
 
 
 })

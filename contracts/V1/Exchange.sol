@@ -15,13 +15,53 @@ contract Exchange is Ownable {
     mapping(address => mapping(address => uint)) private tokens;
     mapping(uint => _Order) public orders;
     mapping(uint => bool) public cancelledOrders;
+    mapping(uint => bool) public orderFilled;
 
     // Events
-    event Deposit(address indexed token, address indexed user, uint indexed balance, uint amount);
-    event Withdrawal(address indexed token, address indexed user, uint indexed balance, uint amount);
-    event Order(uint id, uint timestamp, address user, address tokenGet, uint amountGet, address tokenGive, uint amountGive);
-    event Cancel(uint id, uint timestamp, address user, address tokenGet, uint amountGet, address tokenGive, uint amountGive);
-    event Trade(uint id, uint timestamp, address from, address tokenGet, uint amountGet, address to, address tokenGive, uint amountGive);
+    event Deposit(
+        address indexed token, 
+        address indexed user, 
+        uint indexed balance, 
+        uint amount
+    );
+    
+    event Withdrawal(
+        address indexed token, 
+        address indexed user, 
+        uint indexed balance, 
+        uint amount
+    );
+    
+    event Order(
+        uint id, 
+        uint timestamp, 
+        address user, 
+        address tokenGet, 
+        uint amountGet, 
+        address tokenGive, 
+        uint amountGive
+    );
+    
+    event Cancel(
+        uint id, 
+        uint timestamp, 
+        address user, 
+        address tokenGet, 
+        uint amountGet, 
+        address tokenGive, 
+        uint amountGive
+    );
+    
+    event Trade(
+        uint id, 
+        uint timestamp, 
+        address user, 
+        address tokenGet, 
+        uint amountGet, 
+        address userFill, 
+        address tokenGive, 
+        uint amountGive
+    );
 
 
     // Struct
@@ -109,6 +149,8 @@ contract Exchange is Ownable {
     function cancelOrder(uint _id) public {
         require(_msgSender() == orders[_id].user, "Ownable: caller is not the owner");
         require(!cancelledOrders[_id], "order has already been cancelled");
+        require(!orderFilled[_id], "order has already been filled");
+
         cancelledOrders[_id] = true;
         emit Cancel(
             _id, 
@@ -122,7 +164,11 @@ contract Exchange is Ownable {
     }
 
     function fillOrder(uint _id) public payable {
+        require(!orderFilled[_id], "order has already been filled");
+        require(!cancelledOrders[_id], "order does not exist");
+
         _Order memory _order = orders[_id];
+
         _trade(
             _order.user,
             _order.tokenGet,
@@ -130,6 +176,9 @@ contract Exchange is Ownable {
             _order.tokenGive,
             _order.amountGive
         );
+
+        orderFilled[_id] = true;
+
         emit Trade(
             _id, 
             block.timestamp, 
