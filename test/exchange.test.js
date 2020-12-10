@@ -298,5 +298,42 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
             })
         })
     })
+
+    describe('cancel order', () => {
+        let _tokenGet, _amountGet, _tokenGive, _amountGive;
+
+        beforeEach(async () => {
+            [_tokenGet, _amountGet, _tokenGive, _amountGive] = [ZERO_ADDRESS, toWei(1), this.token.address, toWei(1)];
+            await this.contract.makeOrder(_tokenGet, _amountGet, _tokenGive, _amountGive, { from: user1 });
+        })
+
+        it("should cancel order", async () => {
+            await this.contract.cancelOrder('1', { from: user1 });
+            const result = await this.contract.cancelledOrders(1);
+            expect(result).to.equal(true);
+        })
+
+        it("should fail if order has already been cancelled", async () => {
+            try {
+                await this.contract.cancelOrder('1', { from: user1 });
+                await this.contract.cancelOrder('1', { from: user1 });
+            } catch (error) {
+                assert(error.message.includes("order has already been cancelled"));
+                return;
+            }
+            assert(false);
+        })
+
+        it("should fail if msg.sender is not the owner", async () => {
+            try {
+                await this.contract.cancelOrder('1', { from: admin });
+            } catch (error) {
+                assert(error.message.includes(errorMessage.onlyOwner));
+                return;
+            }
+            assert(false);
+        })
+    })
+    
     
 })
