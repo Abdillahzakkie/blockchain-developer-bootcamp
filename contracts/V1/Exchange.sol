@@ -20,7 +20,7 @@ contract Exchange is Ownable {
     event Deposit(address indexed token, address indexed user, uint indexed balance, uint amount);
     event Withdrawal(address indexed token, address indexed user, uint indexed balance, uint amount);
     event Order(uint id, uint timestamp, address user, address tokenGet, uint amountGet, address tokenGive, uint amountGive);
-
+    event Cancel(uint id, uint timestamp, address user, address tokenGet, uint amountGet, address tokenGive, uint amountGive);
 
     // Struct
     struct _Order {
@@ -114,5 +114,43 @@ contract Exchange is Ownable {
         require(_msgSender() == orders[_id].user, "Ownable: caller is not the owner");
         require(!cancelledOrders[_id], "order has already been cancelled");
         cancelledOrders[_id] = true;
+        emit Cancel(
+            _id, 
+            block.timestamp, 
+            _msgSender(), 
+            orders[_id].tokenGet, 
+            orders[_id].amountGet, 
+            orders[_id].tokenGive, 
+            orders[_id].amountGive
+        );
+    }
+
+    function fillOrder(uint _id) public payable {
+        _Order memory _order = orders[_id];
+        _trade(
+            _order.user,
+            _order.tokenGet,
+            _order.amountGet,
+            _order.tokenGive,
+            _order.amountGive
+        );
+    }
+
+    function _trade( 
+        address _user, 
+        address _tokenGet, 
+        uint _amountGet, 
+        address _tokenGive, 
+        uint _amountGive
+    ) private {
+        uint _feeAmount = _amountGive.mul(feePercent).div(100);
+        // Execute trade 
+        tokens[_tokenGet][_msgSender()] = tokens[_tokenGet][_msgSender()].sub(_amountGet);
+        tokens[_tokenGet][_user] = tokens[_tokenGet][_user].add(_amountGet);
+
+        tokens[_tokenGive][_user] = tokens[_tokenGet][_user].sub(_amountGive);
+        tokens[_tokenGive][_msgSender()] = tokens[_tokenGive][_msgSender()].add(_amountGive.sub(_feeAmount));
+
+        tokens[_tokenGive][feeAccount] = tokens[_tokenGive][feeAccount].add(_feeAmount);
     }
 }

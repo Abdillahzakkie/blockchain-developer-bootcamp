@@ -263,12 +263,14 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
 
     })
     
-    describe('make trade', () => {
+    describe('create new order', () => {
         let reciept;
         let _tokenGet, _amountGet, _tokenGive, _amountGive;
 
         beforeEach(async () => {
             [_tokenGet, _amountGet, _tokenGive, _amountGive] = [ZERO_ADDRESS, toWei(1), this.token.address, toWei(1)];
+            await this.token.approve(this.contract.address, toWei(1), { from: user1 });
+            await this.contract.depositToken(_tokenGive, _amountGive, { from: user1 });
             reciept = await this.contract.makeOrder(_tokenGet, _amountGet, _tokenGive, _amountGive, { from: user1 });
         })
 
@@ -297,6 +299,7 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
                 amountGive: _amountGive 
             })
         })
+
     })
 
     describe('cancel order', () => {
@@ -333,7 +336,62 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
             }
             assert(false);
         })
+
+        it("should emit Order event", async () => {
+            const reciept = await this.contract.cancelOrder('1', { from: user1 });
+            expectEvent(reciept, 'Cancel', {
+                id: '1',
+                user: user1,
+                tokenGet: _tokenGet, 
+                amountGet: _amountGet, 
+                tokenGive: _tokenGive, 
+                amountGive: _amountGive 
+            })
+        })
+
     })
     
+    describe('fill order', () => {
+        let result, reciept;
+        let _tokenGet, _amountGet, _tokenGive, _amountGive;
+
+        beforeEach(async () => {
+            [_tokenGet, _amountGet, _tokenGive, _amountGive] = [ZERO_ADDRESS, toWei(1), this.token.address, toWei(1)];
+            await this.token.approve(this.contract.address, toWei(1), { from: user1 });
+            await this.contract.depositToken(this.token.address, toWei(1), { from: user1 });
+
+            await this.contract.depositEther({ from: user2, value: toWei(1) });
+
+            await this.contract.makeOrder(_tokenGet, _amountGet, _tokenGive, _amountGive, { from: user1 });
+            reciept = await this.contract.fillOrder(1, { from: user2 });
+        })
+
+        describe('should fill new order', () => {
+            it("should set the token values of order maker properly", async () => {
+                result = await this.contract.balanceOf(_tokenGet, user1);
+                expect(result.toString()).to.equal(toWei(1));
+
+                result = await this.contract.balanceOf(_tokenGive, user1);
+                expect(result.toString()).to.equal(toWei(0));
+            })
+
+            it("should set the token values of fill order user properly", async () => {
+                result = await this.contract.balanceOf(_tokenGet, user2);
+                expect(result.toString()).to.equal(toWei(0));
+
+                result = await this.contract.balanceOf(_tokenGive, user2);
+                expect(result.toString()).to.equal(toWei(.9));
+            })
+
+            it("should credit feeAccount with trading fee", async () => {
+                result = await this.contract.balanceOf(_tokenGive, feeAccount);
+                expect(result.toString()).to.equal(toWei(.1));
+            })
+
+        })
+        
+    })
     
+
+
 })
