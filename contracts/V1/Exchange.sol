@@ -9,7 +9,6 @@ contract Exchange is Ownable {
     using SafeMath for uint;
     address payable public feeAccount; // account that receives the exchange fees
     uint public feePercent; // percent fee per successful trade
-    address private ETHER; // store Ether in a blank address
     uint public orderCount; // store ordder counts
 
     mapping(address => mapping(address => uint)) private tokens;
@@ -78,7 +77,6 @@ contract Exchange is Ownable {
     constructor(address payable _feeAccount) {
         feeAccount = _feeAccount;
         feePercent = 10;
-        ETHER = address(0);
         orderCount = 0;
     }
 
@@ -90,10 +88,6 @@ contract Exchange is Ownable {
     function changeFeePercent(uint _feePercent) public {
         require(_msgSender() == feeAccount, "Ownable: caller is not the owner");
         feePercent = _feePercent;
-    }
-
-    fallback() payable external {
-        require(msg.value == 0, "failed");
     }
 
     function depositToken(address _token, uint _amount) public {
@@ -115,17 +109,21 @@ contract Exchange is Ownable {
 
     function depositEther() public payable {
         require(msg.value > 0, "deposit must be greater than zero");
+        address ETHER = address(0); // store Ether in a blank address
         uint _amount = msg.value;
         tokens[ETHER][_msgSender()] = tokens[ETHER][_msgSender()].add(_amount);
         emit Deposit(ETHER, _msgSender(), tokens[ETHER][_msgSender()], _amount);
     }
 
     function withdrawEther(uint _amount) public {
+        address ETHER = address(0); // store Ether in a blank address
         require(tokens[ETHER][_msgSender()] >= _amount, "amount exceeds balance");
         tokens[ETHER][_msgSender()] = tokens[ETHER][_msgSender()].sub(_amount);
 
-        payable(_msgSender()).transfer(_amount);
         emit Withdrawal(ETHER, _msgSender(), tokens[ETHER][_msgSender()], _amount);
+
+        (bool _success, ) = _msgSender().call{value: _amount}("");
+        require(_success, "Failed to send Ether");
     }
 
     function balanceOf(address _token, address _account) external view returns(uint) {
@@ -207,5 +205,9 @@ contract Exchange is Ownable {
         tokens[_tokenGive][_msgSender()] = tokens[_tokenGive][_msgSender()].add(_amountGive.sub(_feeAmount));
 
         tokens[_tokenGive][feeAccount] = tokens[_tokenGive][feeAccount].add(_feeAmount);
+    }
+
+    receive() payable external {
+        require(msg.value == 0, "failed");
     }
 }

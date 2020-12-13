@@ -23,7 +23,7 @@ module.exports = async callback => {
         // User1 deposit tokens
         let _amount = toWei(1);
         await exchange.depositEther({ from: user1, value: _amount });
-        console.log(`Deposit ${fromWei(_amount)} Ether for ${user1}`);
+        console.log(`Deposit ${fromWei(_amount)} Ether from ${user1}`);
 
         // User2 approves tokens
         _amount = toWei(100);
@@ -31,9 +31,9 @@ module.exports = async callback => {
 
         // User2 deposits tokens
         await exchange.depositToken(token.address, _amount, { from: user2 });
-        console.log(`Deposit ${fromWei(_amount)} RAID for ${user1}`);
+        console.log(`Deposit ${fromWei(_amount)} RAID from ${user1}`);
 
-        // User1 makes order to gegt tokens
+        // User1 makes order to get tokens
         let result, orderId;
         result = await exchange.makeOrder(token.address, toWei(100), ZERO_ADDRESS, toWei(1), {from: user1 });
         console.log(`Made order from ${user1}`);
@@ -49,7 +49,7 @@ module.exports = async callback => {
 
         orderId = result.logs[0].args.id;
         await exchange.fillOrder(orderId, { from: user2 });
-        console.log(`Filled order from ${user1}`);
+        console.log(`Filled order from ${user2}`);
 
 
         // User1 makes 10 trades

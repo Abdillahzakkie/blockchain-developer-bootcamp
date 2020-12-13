@@ -1,3 +1,4 @@
+const path = require("path");
 const { alchemyApiKey, mnemonic } = require("./secret.json");
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 
@@ -38,5 +39,6 @@ module.exports = {
       //  evmVersion: "byzantium"
       }
     }
-  }
+  },
+  contracts_build_directory: path.resolve(__dirname, "../client/src/contracts"),
 };

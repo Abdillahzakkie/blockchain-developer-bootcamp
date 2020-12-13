@@ -325,7 +325,7 @@ contract("Exchange", async ([admin, feeAccount, user1, user2, user3]) => {
             assert(false);
         })
 
-        it("should emit Order event", async () => {
+        it("should emit Cancel event", async () => {
             const reciept = await this.contract.cancelOrder('1', { from: user1 });
             expectEvent(reciept, 'Cancel', {
                 id: '1',
