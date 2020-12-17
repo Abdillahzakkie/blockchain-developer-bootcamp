@@ -53,7 +53,7 @@ module.exports = async callback => {
 
 
         // User1 makes 10 trades
-        for(let i = 0; i < 10; ++i) {
+        for(let i = 1; i < 10; ++i) {
             result = await exchange.makeOrder(token.address, toWei(10 * i), ZERO_ADDRESS, toWei(.01), {
                 from: user1
             });
@@ -61,7 +61,7 @@ module.exports = async callback => {
         }
 
         // User2 makes 10 trades
-        for(let i = 0; i < 10; ++i) {
+        for(let i = 1; i < 10; ++i) {
             result = await exchange.makeOrder(ZERO_ADDRESS, toWei(0.01), token.address,  toWei(10 * i), {
                 from: user2
             });
